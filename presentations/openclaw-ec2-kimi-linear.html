@@ -850,7 +850,72 @@
       </div>
     </section>
 
-    <!-- Slide 9: Getting Started -->
+    <!-- Slide 9: Security -->
+    <section class="slide" data-title="Security">
+      <div>
+        <div class="kicker">Security Model</div>
+        <h2>Security by Design</h2>
+        
+        <div class="grid2">
+          <div class="card">
+            <div class="title">🔑 Credentials</div>
+            <div class="value">Env vars only — never in code. API keys for Kimi, Linear, Notion stored in environment, never committed.</div>
+          </div>
+          <div class="card">
+            <div class="title">🖥️ Infrastructure</div>
+            <div class="value">SSH key-only, IP-restricted. No inbound ports needed — OpenClaw connects outbound to APIs only.</div>
+          </div>
+          <div class="card">
+            <div class="title">📡 Data Flow</div>
+            <div class="value">HTTPS everywhere. Transient processing — no persistent chat logs. No PII in our use case.</div>
+          </div>
+          <div class="card">
+            <div class="title">🔒 API Scope</div>
+            <div class="value">Read-only tokens where possible. Telegram bot whitelists chat IDs. Integration-level Notion access.</div>
+          </div>
+        </div>
+        
+        <div class="callout" style="margin-top: 14px;">
+          <strong>Key insight:</strong> Outbound-only architecture eliminates a whole class of attacks. Our server calls APIs — nothing calls it.
+        </div>
+        
+        <div class="callout" style="margin-top: 10px; border-color: var(--accent2);">
+          <strong>Threat model:</strong> Internal tooling with no customer PII. Appropriate for personal/team automation, not Fort Knox — but layered and rotatable.
+        </div>
+      </div>
+      <div class="right">
+        <svg class="figure" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg">
+          <rect x="36" y="54" width="648" height="352" rx="22" fill="#0b0f17" stroke="rgba(255,255,255,.12)"/>
+          
+          <text x="70" y="96" fill="#e9eef7" font-family="ui-monospace" font-size="14">Security Layers</text>
+          
+          <!-- Layer 1: Outer -->
+          <rect x="70" y="118" width="580" height="50" rx="12" fill="#0f1623" stroke="#76a9ff"/>
+          <text x="90" y="148" fill="#76a9ff" font-family="ui-monospace" font-size="13">AWS Security Group</text>
+          <text x="320" y="148" fill="#6e7a92" font-family="ui-monospace" font-size="11">SSH (22) from your IP only</text>
+          
+          <!-- Layer 2 -->
+          <rect x="90" y="180" width="540" height="50" rx="12" fill="#0f1623" stroke="#78f0c6"/>
+          <text x="110" y="210" fill="#78f0c6" font-family="ui-monospace" font-size="13">OS Level</text>
+          <text x="240" y="210" fill="#6e7a92" font-family="ui-monospace" font-size="11">Key-only SSH, auto updates, env var isolation</text>
+          
+          <!-- Layer 3 -->
+          <rect x="110" y="242" width="500" height="50" rx="12" fill="#0f1623" stroke="#ffcc66"/>
+          <text x="130" y="272" fill="#ffcc66" font-family="ui-monospace" font-size="13">Application</text>
+          <text x="260" y="272" fill="#6e7a92" font-family="ui-monospace" font-size="11">Secrets in env, outbound-only, no persistent logs</text>
+          
+          <!-- Layer 4: Inner -->
+          <rect x="130" y="304" width="460" height="50" rx="12" fill="#0f1623" stroke="#ff6b7a"/>
+          <text x="150" y="334" fill="#ff6b7a" font-family="ui-monospace" font-size="13">API Tokens</text>
+          <text x="280" y="334" fill="#6e7a92" font-family="ui-monospace" font-size="11">Rotatable, scoped, integration-level access</text>
+          
+          <!-- Bottom note -->
+          <text x="70" y="380" fill="#a9b4c7" font-family="ui-monospace" font-size="12">If a token leaks → revoke in 30 seconds. No inbound attack surface.</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Slide 10: Getting Started -->
     <section class="slide" data-title="Getting Started">
       <div class="onecol">
         <div class="kicker">Replication Guide</div>
@@ -888,7 +953,7 @@
       </div>
     </section>
 
-    <!-- Slide 10: Q&A -->
+    <!-- Slide 11: Q&A -->
     <section class="slide" data-title="Q&A">
       <div class="onecol" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
         <div class="kicker">Questions?</div>
@@ -917,7 +982,7 @@
   <div class="footer">
     <span class="hint">Navigate: <span class="kbd">←</span>/<span class="kbd">→</span> · Fullscreen: <span class="kbd">F</span> · Print: <span class="kbd">P</span></span>
     <div class="progress">
-      <span id="counter">1 / 10</span>
+      <span id="counter">1 / 11</span>
       <span class="bar" aria-hidden="true"><i id="bar"></i></span>
     </div>
   </div>
