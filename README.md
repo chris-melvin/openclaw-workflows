@@ -70,13 +70,14 @@ aws ec2 run-instances \
   --key-name my-key \
   --security-group-ids sg-xxxxx
 
-# Install Node.js 22
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# Install OpenClaw
-npm install -g openclaw
+# Install OpenClaw (one-liner)
+curl -fsSL https://openclaw.ai/install.sh | bash
 ```
+
+The install script handles:
+- Node.js 22 installation (if not present)
+- OpenClaw CLI installation
+- Default configuration setup
 
 ### 2. Configure OpenClaw
 
