@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OpenClaw Show & Tell — Learning + MIS</title>
+  <style>
+    :root{
+      --bg: #0b0f17;
+      --panel: #0f1623;
+      --text: #e9eef7;
+      --muted: #a9b4c7;
+      --faint: #6e7a92;
+      --line: rgba(255,255,255,.10);
+      --accent: #76a9ff;
+      --accent2: #78f0c6;
+      --warn: #ffcc66;
+      --danger: #ff6b7a;
+      --shadow: 0 24px 80px rgba(0,0,0,.45);
+      --radius: 18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+
+    /* No gradients: solid fills only */
+    html, body { height: 100%; }
+    body{
+      margin: 0;
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    .deck{
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    header{
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(0,0,0,.12);
+      backdrop-filter: blur(6px);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+      min-height: 36px;
+    }
+
+    .logo{
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: #111a2a;
+      border: 1px solid var(--line);
+      display:grid;
+      place-items:center;
+    }
+
+    .brand h1{
+      font-size: 14px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin: 0;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .brand .meta{
+      margin-left: auto;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      color: var(--faint);
+      font-size: 12px;
+    }
+
+    .pill{
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-family: var(--mono);
+    }
+
+    main{
+      position: relative;
+      padding: 18px;
+    }
+
+    .slide{
+      position: absolute;
+      inset: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 18px;
+      padding: 28px;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: opacity 220ms ease, transform 220ms ease;
+    }
+
+    .slide.active{
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .onecol{ grid-template-columns: 1fr; }
+
+    h2{
+      margin: 0 0 10px 0;
+      font-size: 38px;
+      line-height: 1.07;
+      letter-spacing: -0.02em;
+    }
+
+    h3{
+      margin: 18px 0 10px;
+      font-size: 18px;
+      color: var(--muted);
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+
+    p{
+      margin: 10px 0;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    ul{
+      margin: 10px 0 0 0;
+      padding: 0 0 0 18px;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+    li{ margin: 6px 0; }
+
+    .kicker{
+      font-family: var(--mono);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      font-size: 12px;
+      color: var(--faint);
+      margin-bottom: 12px;
+    }
+
+    .callout{
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,.03);
+      padding: 16px 16px;
+      color: var(--text);
+    }
+
+    .callout strong{ color: var(--text); }
+    .callout p{ margin: 8px 0 0; font-size: 16px; }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .card{
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px 14px;
+      background: rgba(0,0,0,.10);
+    }
+    .card .title{ font-size: 14px; color: var(--faint); font-family: var(--mono); }
+    .card .value{ font-size: 18px; margin-top: 6px; color: var(--text); }
+
+    .right{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(0,0,0,.12);
+      overflow: hidden;
+      min-height: 360px;
+    }
+
+    .figure{
+      width: 92%;
+      max-width: 520px;
+      height: auto;
+    }
+
+    .footer{
+      padding: 14px 22px;
+      border-top: 1px solid var(--line);
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      color: var(--faint);
+      font-size: 12px;
+      background: rgba(0,0,0,.12);
+      backdrop-filter: blur(6px);
+    }
+
+    .progress{
+      margin-left: auto;
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      font-family: var(--mono);
+    }
+
+    .bar{
+      width: 170px;
+      height: 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      overflow: hidden;
+    }
+
+    .bar > i{
+      display:block;
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+    }
+
+    .hint{
+      font-family: var(--mono);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      color: var(--muted);
+      background: rgba(255,255,255,.03);
+    }
+
+    .kbd{
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.20);
+      color: var(--text);
+    }
+
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      padding: 6px 10px;
+      font-family: var(--mono);
+      color: var(--muted);
+      background: rgba(255,255,255,.03);
+      margin-top: 10px;
+    }
+
+    .tag .dot{
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent2);
+    }
+
+    .splitlist{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 22px;
+      margin-top: 10px;
+    }
+
+    .quote{
+      margin-top: 14px;
+      padding: 14px 14px;
+      border-left: 3px solid var(--accent);
+      background: rgba(255,255,255,.03);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 18px;
+      line-height: 1.5;
+    }
+
+    .small{ font-size: 14px; color: var(--faint); }
+
+    @media (max-width: 980px){
+      body{ overflow:auto; }
+      .deck{ height: auto; }
+      main{ padding: 12px; }
+      .slide{ position: relative; inset: auto; margin: 12px 0; opacity:1; transform:none; pointer-events:auto; }
+      .footer{ position: sticky; bottom: 0; }
+    }
+
+    /* Print: one slide per page */
+    @media print{
+      body{ overflow: visible; }
+      header, .footer{ display:none; }
+      main{ padding:0; }
+      .slide{ position: relative; inset:auto; break-after: page; opacity: 1 !important; transform:none !important; box-shadow:none; }
+    }
+  </style>
+</head>
+<body>
+<div class="deck" id="deck">
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <!-- Hat icon (simple SVG) -->
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M7 11c0-4 2.2-7 5-7s5 3 5 7" stroke="#76a9ff" stroke-width="2" stroke-linecap="round"/>
+          <path d="M4 11h16" stroke="#76a9ff" stroke-width="2" stroke-linecap="round"/>
+          <path d="M3 14c2.5 2 15.5 2 18 0" stroke="#78f0c6" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1>OpenClaw — Show & Tell</h1>
+        <div class="small">Learning automation (Notion + cron) · Management Information Systems (MIS)</div>
+      </div>
+      <div class="meta">
+        <span class="pill">← / →</span>
+        <span class="pill">F</span>
+        <span class="pill">P</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Slide 1 -->
+    <section class="slide active" data-title="Title">
+      <div>
+        <div class="kicker">What I built with OpenClaw</div>
+        <h2>From chat… to systems that run themselves</h2>
+        <p>
+          Two practical builds:
+          <strong>1) a daily learning tool</strong> (Notion + cron), and
+          <strong>2) a lightweight MIS</strong> that helps non‑technical teammates create decision-ready graphs.
+        </p>
+        <div class="quote">
+          “I’m not using AI to answer questions. I’m using AI to run workflows.”
+        </div>
+        <div class="tag"><span class="dot"></span> Live demo friendly</div>
+      </div>
+      <div class="right">
+        <svg class="figure" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg">
+          <rect x="30" y="36" width="660" height="388" rx="22" fill="#0b0f17" stroke="rgba(255,255,255,.12)"/>
+          <rect x="60" y="70" width="290" height="320" rx="18" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <rect x="370" y="70" width="290" height="150" rx="18" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <rect x="370" y="240" width="290" height="150" rx="18" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+
+          <text x="86" y="108" fill="#a9b4c7" font-family="ui-monospace" font-size="14">Learning Hub</text>
+          <text x="396" y="108" fill="#a9b4c7" font-family="ui-monospace" font-size="14">MIS Brief</text>
+          <text x="396" y="278" fill="#a9b4c7" font-family="ui-monospace" font-size="14">Alerts</text>
+
+          <!-- checklist -->
+          <rect x="86" y="130" width="230" height="18" rx="9" fill="rgba(255,255,255,.06)"/>
+          <rect x="86" y="160" width="210" height="18" rx="9" fill="rgba(255,255,255,.06)"/>
+          <rect x="86" y="190" width="190" height="18" rx="9" fill="rgba(255,255,255,.06)"/>
+          <rect x="86" y="220" width="230" height="18" rx="9" fill="rgba(255,255,255,.06)"/>
+          <circle cx="74" cy="139" r="6" fill="#78f0c6"/>
+          <circle cx="74" cy="169" r="6" fill="#76a9ff"/>
+          <circle cx="74" cy="199" r="6" fill="#76a9ff"/>
+          <circle cx="74" cy="229" r="6" fill="#ffcc66"/>
+
+          <!-- chart -->
+          <polyline points="396,190 440,170 488,178 528,150 566,164 620,130" fill="none" stroke="#76a9ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="396" y1="204" x2="636" y2="204" stroke="rgba(255,255,255,.10)"/>
+          <circle cx="620" cy="130" r="5" fill="#78f0c6"/>
+
+          <!-- alert cards -->
+          <rect x="396" y="300" width="240" height="18" rx="9" fill="rgba(255,255,255,.06)"/>
+          <rect x="396" y="330" width="220" height="18" rx="9" fill="rgba(255,255,255,.06)"/>
+          <rect x="396" y="360" width="200" height="18" rx="9" fill="rgba(255,255,255,.06)"/>
+          <rect x="636" y="300" width="18" height="18" rx="6" fill="#ff6b7a"/>
+          <rect x="636" y="330" width="18" height="18" rx="6" fill="#ffcc66"/>
+          <rect x="636" y="360" width="18" height="18" rx="6" fill="#78f0c6"/>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Slide 2 -->
+    <section class="slide" data-title="Why OpenClaw">
+      <div>
+        <div class="kicker">Why it matters</div>
+        <h2>What OpenClaw adds beyond a simple chat UI</h2>
+        <ul>
+          <li><strong>Tools:</strong> it can update Notion, run scripts, browse, write files.</li>
+          <li><strong>Scheduling:</strong> cron jobs turn “remember to…” into “it happens.”</li>
+          <li><strong>Delivery:</strong> proactive messages (e.g., Telegram) instead of you checking dashboards.</li>
+          <li><strong>Reproducibility:</strong> workflows live outside one conversation.</li>
+          <li><strong>System feel:</strong> AI with hands + a calendar + a place to store state.</li>
+        </ul>
+        <div class="grid2">
+          <div class="card">
+            <div class="title">Simple chat interface</div>
+            <div class="value">Answers → you do the work</div>
+          </div>
+          <div class="card">
+            <div class="title">OpenClaw</div>
+            <div class="value">Answers + actions + automation</div>
+          </div>
+        </div>
+      </div>
+      <div class="right">
+        <svg class="figure" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg">
+          <rect x="36" y="54" width="648" height="352" rx="22" fill="#0b0f17" stroke="rgba(255,255,255,.12)"/>
+          <text x="70" y="96" fill="#e9eef7" font-family="ui-monospace" font-size="14">Workflow</text>
+          <rect x="70" y="118" width="580" height="64" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="92" y="152" fill="#a9b4c7" font-family="ui-monospace" font-size="14">"Every day at 6pm: study topic + quiz + update Notion"</text>
+
+          <rect x="70" y="206" width="180" height="150" rx="18" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <rect x="268" y="206" width="180" height="150" rx="18" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <rect x="466" y="206" width="184" height="150" rx="18" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+
+          <text x="92" y="240" fill="#a9b4c7" font-family="ui-monospace" font-size="12">Notion</text>
+          <text x="290" y="240" fill="#a9b4c7" font-family="ui-monospace" font-size="12">Cron</text>
+          <text x="488" y="240" fill="#a9b4c7" font-family="ui-monospace" font-size="12">Telegram</text>
+
+          <circle cx="160" cy="292" r="26" fill="#111a2a" stroke="rgba(255,255,255,.12)"/>
+          <circle cx="358" cy="292" r="26" fill="#111a2a" stroke="rgba(255,255,255,.12)"/>
+          <circle cx="558" cy="292" r="26" fill="#111a2a" stroke="rgba(255,255,255,.12)"/>
+          <path d="M150 292h20" stroke="#78f0c6" stroke-width="3" stroke-linecap="round"/>
+          <path d="M348 292h20" stroke="#76a9ff" stroke-width="3" stroke-linecap="round"/>
+          <path d="M548 292h20" stroke="#ffcc66" stroke-width="3" stroke-linecap="round"/>
+
+          <path d="M186 292h146" stroke="rgba(255,255,255,.10)" stroke-width="2" stroke-linecap="round"/>
+          <path d="M384 292h146" stroke="rgba(255,255,255,.10)" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Slide 3 -->
+    <section class="slide" data-title="Learning Tool">
+      <div>
+        <div class="kicker">Build #1</div>
+        <h2>Daily Learning Tool (Notion + cron)</h2>
+        <p>
+          A lightweight system that makes learning consistent:
+          it decides the topic, generates the lesson + quiz, and logs it in Notion.
+        </p>
+
+        <h3>How it works</h3>
+        <ul>
+          <li><strong>Rotation schedule:</strong> 8 subjects (e.g., Calculus → Spanish → …)</li>
+          <li><strong>Weekdays:</strong> study today’s subject, quiz yesterday’s</li>
+          <li><strong>Weekends:</strong> review mode (lowest mastery / weakest topics)</li>
+          <li><strong>Writeback:</strong> creates a schedule entry + stores notes and results</li>
+        </ul>
+
+        <div class="callout" style="margin-top: 14px;">
+          <strong>Key idea:</strong> learning becomes a recurring workflow, not a mood.
+          <p class="small">Cron triggers the session; Notion is the source of truth for what happened.</p>
+        </div>
+      </div>
+      <div class="right">
+        <svg class="figure" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg">
+          <rect x="52" y="48" width="616" height="364" rx="22" fill="#0b0f17" stroke="rgba(255,255,255,.12)"/>
+          <text x="86" y="92" fill="#e9eef7" font-family="ui-monospace" font-size="14">Notion: Daily Schedule</text>
+          <rect x="86" y="112" width="548" height="62" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="110" y="145" fill="#a9b4c7" font-family="ui-monospace" font-size="13">Date: 2026-02-23 (Day 18)</text>
+
+          <rect x="86" y="190" width="268" height="94" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <rect x="366" y="190" width="268" height="94" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="110" y="224" fill="#78f0c6" font-family="ui-monospace" font-size="12">Study Topic</text>
+          <text x="110" y="252" fill="#e9eef7" font-family="ui-monospace" font-size="16">Spanish</text>
+          <text x="390" y="224" fill="#76a9ff" font-family="ui-monospace" font-size="12">Quiz Topic</text>
+          <text x="390" y="252" fill="#e9eef7" font-family="ui-monospace" font-size="16">Calculus</text>
+
+          <rect x="86" y="302" width="548" height="84" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="110" y="336" fill="#a9b4c7" font-family="ui-monospace" font-size="13">Lesson summary + 5-question quiz</text>
+          <text x="110" y="362" fill="#6e7a92" font-family="ui-monospace" font-size="12">(delivered via Telegram; logged in Notion)</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Slide 4 -->
+    <section class="slide" data-title="Cron">
+      <div>
+        <div class="kicker">Automation</div>
+        <h2>Yes — it runs from a cron job</h2>
+        <p>
+          The learning session can be scheduled (e.g., every day at 6pm). When it fires, it:
+        </p>
+        <div class="splitlist">
+          <div>
+            <h3>Inputs</h3>
+            <ul>
+              <li>rotation schedule</li>
+              <li>weekday/weekend mode</li>
+              <li>Notion mastery data (optional)</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Outputs</h3>
+            <ul>
+              <li>lesson summary</li>
+              <li>5-question quiz</li>
+              <li>Notion schedule entry</li>
+              <li>Telegram reminder/report</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="callout" style="margin-top: 14px;">
+          <strong>Why cron matters:</strong>
+          <p>“I don’t remember to do it. The system does.”</p>
+        </div>
+
+        <p class="small" style="margin-top: 10px;">In the live demo: trigger it manually once, then show it running on schedule.</p>
+      </div>
+      <div class="right">
+        <svg class="figure" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg">
+          <rect x="58" y="56" width="604" height="348" rx="22" fill="#0b0f17" stroke="rgba(255,255,255,.12)"/>
+          <text x="92" y="98" fill="#e9eef7" font-family="ui-monospace" font-size="14">Cron Timeline</text>
+
+          <line x1="120" y1="150" x2="600" y2="150" stroke="rgba(255,255,255,.12)" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="170" cy="150" r="10" fill="#76a9ff"/>
+          <circle cx="360" cy="150" r="10" fill="#ffcc66"/>
+          <circle cx="550" cy="150" r="10" fill="#78f0c6"/>
+
+          <text x="150" y="190" fill="#a9b4c7" font-family="ui-monospace" font-size="12">6:00pm trigger</text>
+          <text x="318" y="190" fill="#a9b4c7" font-family="ui-monospace" font-size="12">generate lesson + quiz</text>
+          <text x="515" y="190" fill="#a9b4c7" font-family="ui-monospace" font-size="12">write Notion + send</text>
+
+          <rect x="120" y="228" width="480" height="132" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="146" y="264" fill="#a9b4c7" font-family="ui-monospace" font-size="13">Reminder: 🎓 Daily Learning Session</text>
+          <text x="146" y="292" fill="#6e7a92" font-family="ui-monospace" font-size="12">Study topic: Spanish • Quiz: Calculus</text>
+          <text x="146" y="322" fill="#6e7a92" font-family="ui-monospace" font-size="12">Notion updated • Reply with answers to grade</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Slide 5 -->
+    <section class="slide" data-title="MIS">
+      <div>
+        <div class="kicker">Build #2</div>
+        <h2>MIS for non‑technical teammates</h2>
+        <p>
+          The goal isn’t “make charts.” It’s to make <strong>decision-ready views</strong>:
+          the right metric, the right slice, delivered at the right time.
+        </p>
+
+        <h3>What we enable</h3>
+        <ul>
+          <li>Ask in plain language: “Show weekly conversion rate by branch.”</li>
+          <li>Standardize definitions: one source of truth for KPIs.</li>
+          <li>Push reporting: daily/weekly brief + anomaly alerts.</li>
+          <li>Reduce bottlenecks: less dependence on a single analyst.</li>
+        </ul>
+
+        <div class="callout" style="margin-top: 14px;">
+          <strong>Operating principle:</strong> graphs are outputs; the workflow is the product.
+        </div>
+      </div>
+      <div class="right">
+        <svg class="figure" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg">
+          <rect x="52" y="48" width="616" height="364" rx="22" fill="#0b0f17" stroke="rgba(255,255,255,.12)"/>
+          <text x="86" y="92" fill="#e9eef7" font-family="ui-monospace" font-size="14">KPI Brief</text>
+
+          <rect x="86" y="112" width="548" height="92" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="110" y="145" fill="#a9b4c7" font-family="ui-monospace" font-size="13">Revenue</text>
+          <text x="110" y="178" fill="#e9eef7" font-family="ui-monospace" font-size="20">₱ 4.2M</text>
+          <text x="260" y="145" fill="#a9b4c7" font-family="ui-monospace" font-size="13">Conversion</text>
+          <text x="260" y="178" fill="#e9eef7" font-family="ui-monospace" font-size="20">3.9%</text>
+          <text x="430" y="145" fill="#a9b4c7" font-family="ui-monospace" font-size="13">Returns</text>
+          <text x="430" y="178" fill="#e9eef7" font-family="ui-monospace" font-size="20">1.2%</text>
+
+          <rect x="86" y="220" width="548" height="166" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="110" y="252" fill="#a9b4c7" font-family="ui-monospace" font-size="13">Trend (last 6 weeks)</text>
+          <line x1="110" y1="354" x2="610" y2="354" stroke="rgba(255,255,255,.10)"/>
+          <polyline points="110,330 170,320 230,310 290,318 350,300 410,284 470,292 530,260 590,250" fill="none" stroke="#76a9ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="590" cy="250" r="5" fill="#78f0c6"/>
+
+          <rect x="520" y="228" width="104" height="26" rx="13" fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.12)"/>
+          <text x="538" y="246" fill="#ffcc66" font-family="ui-monospace" font-size="12">ANOMALY</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Slide 6 -->
+    <section class="slide" data-title="Demo">
+      <div class="onecol" style="grid-column: 1 / -1;">
+        <div class="kicker">Live test plan (10 minutes)</div>
+        <h2>How I demo this in front of a team</h2>
+
+        <div class="grid2" style="grid-template-columns: 1fr 1fr;">
+          <div class="callout">
+            <strong>Demo A — Learning tool</strong>
+            <p>
+              1) Trigger the job (or run once)
+              <br/>2) It picks today’s topic + quizzes yesterday
+              <br/>3) It writes a Notion entry
+              <br/>4) It sends the lesson + quiz via chat
+            </p>
+          </div>
+          <div class="callout">
+            <strong>Demo B — MIS brief</strong>
+            <p>
+              1) Take a small CSV/Sheet
+              <br/>2) Define 3 KPIs
+              <br/>3) Generate a “KPI brief” page
+              <br/>4) Schedule daily push summaries + threshold alerts
+            </p>
+          </div>
+        </div>
+
+        <h3>Soundbites that land well</h3>
+        <ul>
+          <li>“Non‑technical teammates can build dashboards without waiting on engineers.”</li>
+          <li>“If it’s important, it should be scheduled and delivered— not buried in a tab.”</li>
+          <li>“We’re not replacing analysts. We’re removing the busywork and bottlenecks.”</li>
+        </ul>
+
+        <div class="callout" style="margin-top: 14px; display:flex; align-items:center; justify-content:space-between; gap: 12px;">
+          <div>
+            <strong>Tip:</strong> end with a simple challenge.
+            <p class="small">“Give me a metric you wish you had daily. We’ll build the first version in 5 minutes.”</p>
+          </div>
+          <div class="hint">Press <span class="kbd">P</span> to print</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="footer">
+    <span class="hint">Navigate: <span class="kbd">←</span>/<span class="kbd">→</span> · Fullscreen: <span class="kbd">F</span> · Print: <span class="kbd">P</span></span>
+    <div class="progress">
+      <span id="counter">1 / 6</span>
+      <span class="bar" aria-hidden="true"><i id="bar"></i></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let idx = 0;
+
+  const counter = document.getElementById('counter');
+  const bar = document.getElementById('bar');
+
+  function setActive(i){
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, k) => s.classList.toggle('active', k === idx));
+    counter.textContent = `${idx + 1} / ${slides.length}`;
+    bar.style.width = `${((idx + 1) / slides.length) * 100}%`;
+    document.title = `OpenClaw Show & Tell — ${slides[idx].dataset.title || (idx+1)}`;
+  }
+
+  function next(){ setActive(idx + 1); }
+  function prev(){ setActive(idx - 1); }
+
+  function toggleFullscreen(){
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+    else document.exitFullscreen?.();
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft'  || e.key === 'PageUp') { e.preventDefault(); prev(); }
+    if (e.key.toLowerCase() === 'f') { e.preventDefault(); toggleFullscreen(); }
+    if (e.key.toLowerCase() === 'p') { e.preventDefault(); window.print(); }
+    if (e.key === 'Home') { e.preventDefault(); setActive(0); }
+    if (e.key === 'End') { e.preventDefault(); setActive(slides.length - 1); }
+  });
+
+  // Click to advance (but don't steal clicks from links/selectable text)
+  window.addEventListener('click', (e) => {
+    const tag = (e.target?.tagName || '').toLowerCase();
+    if (['a','button','input','textarea','select'].includes(tag)) return;
+    // Only advance when clicking main area (not header/footer)
+    const inMain = !!e.target.closest('main');
+    if (inMain) next();
+  });
+
+  // Touch: swipe
+  let x0 = null;
+  window.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, {passive:true});
+  window.addEventListener('touchend', (e) => {
+    if (x0 === null) return;
+    const x1 = e.changedTouches[0].clientX;
+    const dx = x1 - x0;
+    if (Math.abs(dx) > 50){ dx < 0 ? next() : prev(); }
+    x0 = null;
+  }, {passive:true});
+
+  setActive(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OpenClaw Workflow Setup — EC2 + Kimi + Linear</title>
+  <style>
+    :root{
+      --bg: #0b0f17;
+      --panel: #0f1623;
+      --text: #e9eef7;
+      --muted: #a9b4c7;
+      --faint: #6e7a92;
+      --line: rgba(255,255,255,.10);
+      --accent: #76a9ff;
+      --accent2: #78f0c6;
+      --warn: #ffcc66;
+      --danger: #ff6b7a;
+      --shadow: 0 24px 80px rgba(0,0,0,.45);
+      --radius: 18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+
+    html, body { height: 100%; }
+    body{
+      margin: 0;
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    .deck{
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    header{
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(0,0,0,.12);
+      backdrop-filter: blur(6px);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+      min-height: 36px;
+    }
+
+    .logo{
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: #111a2a;
+      border: 1px solid var(--line);
+      display:grid;
+      place-items:center;
+    }
+
+    .brand h1{
+      font-size: 14px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin: 0;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .brand .meta{
+      margin-left: auto;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      color: var(--faint);
+      font-size: 12px;
+    }
+
+    .pill{
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-family: var(--mono);
+    }
+
+    main{
+      position: relative;
+      padding: 18px;
+    }
+
+    .slide{
+      position: absolute;
+      inset: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 18px;
+      padding: 28px;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      transition: opacity 220ms ease, transform 220ms ease;
+    }
+
+    .slide.active{
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .onecol{ grid-template-columns: 1fr; }
+    .twocol{ grid-template-columns: 1fr 1fr; }
+
+    h2{
+      margin: 0 0 10px 0;
+      font-size: 38px;
+      line-height: 1.07;
+      letter-spacing: -0.02em;
+    }
+
+    h3{
+      margin: 18px 0 10px;
+      font-size: 18px;
+      color: var(--muted);
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+
+    p{
+      margin: 10px 0;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    ul{
+      margin: 10px 0 0 0;
+      padding: 0 0 0 18px;
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+    li{ margin: 6px 0; }
+
+    .kicker{
+      font-family: var(--mono);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      font-size: 12px;
+      color: var(--faint);
+      margin-bottom: 12px;
+    }
+
+    .callout{
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,.03);
+      padding: 16px 16px;
+      color: var(--text);
+    }
+
+    .callout strong{ color: var(--text); }
+    .callout p{ margin: 8px 0 0; font-size: 16px; }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .card{
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px 14px;
+      background: rgba(0,0,0,.10);
+    }
+    .card .title{ font-size: 14px; color: var(--faint); font-family: var(--mono); }
+    .card .value{ font-size: 18px; margin-top: 6px; color: var(--text); }
+
+    .right{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(0,0,0,.12);
+      overflow: hidden;
+      min-height: 360px;
+    }
+
+    .figure{
+      width: 92%;
+      max-width: 520px;
+      height: auto;
+    }
+
+    .footer{
+      padding: 14px 22px;
+      border-top: 1px solid var(--line);
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      color: var(--faint);
+      font-size: 12px;
+      background: rgba(0,0,0,.12);
+      backdrop-filter: blur(6px);
+    }
+
+    .progress{
+      margin-left: auto;
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      font-family: var(--mono);
+    }
+
+    .bar{
+      width: 170px;
+      height: 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      overflow: hidden;
+    }
+
+    .bar > i{
+      display:block;
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+    }
+
+    .hint{
+      font-family: var(--mono);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      color: var(--muted);
+      background: rgba(255,255,255,.03);
+    }
+
+    .kbd{
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.20);
+      color: var(--text);
+    }
+
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      padding: 6px 10px;
+      font-family: var(--mono);
+      color: var(--muted);
+      background: rgba(255,255,255,.03);
+      margin-top: 10px;
+    }
+
+    .tag .dot{
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent2);
+    }
+
+    .splitlist{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 22px;
+      margin-top: 10px;
+    }
+
+    .quote{
+      margin-top: 14px;
+      padding: 14px 14px;
+      border-left: 3px solid var(--accent);
+      background: rgba(255,255,255,.03);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 18px;
+      line-height: 1.5;
+    }
+
+    .small{ font-size: 14px; color: var(--faint); }
+
+    pre.code{
+      background: rgba(0,0,0,.20);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-x: auto;
+      color: var(--text);
+      margin: 10px 0;
+    }
+
+    .code-block{
+      background: #0b0f17;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text);
+      overflow-x: auto;
+    }
+
+    .code-comment{ color: var(--faint); }
+    .code-keyword{ color: var(--accent); }
+    .code-string{ color: var(--accent2); }
+
+    @media (max-width: 980px){
+      body{ overflow:auto; }
+      .deck{ height: auto; }
+      main{ padding: 12px; }
+      .slide{ position: relative; inset: auto; margin: 12px 0; opacity:1; transform:none; pointer-events:auto; }
+      .footer{ position: sticky; bottom: 0; }
+    }
+
+    @media print{
+      body{ overflow: visible; }
+      header, .footer{ display:none; }
+      main{ padding:0; }
+      .slide{ position: relative; inset:auto; break-after: page; opacity: 1 !important; transform:none !important; box-shadow:none; }
+    }
+  </style>
+</head>
+<body>
+<div class="deck" id="deck">
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M7 11c0-4 2.2-7 5-7s5 3 5 7" stroke="#76a9ff" stroke-width="2" stroke-linecap="round"/>
+          <path d="M4 11h16" stroke="#76a9ff" stroke-width="2" stroke-linecap="round"/>
+          <path d="M3 14c2.5 2 15.5 2 18 0" stroke="#78f0c6" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1>OpenClaw Workflow Setup — Tech Deep Dive</h1>
+        <div class="small">EC2 + Kimi + Linear Integration</div>
+      </div>
+      <div class="meta">
+        <span class="pill">← / →</span>
+        <span class="pill">F</span>
+        <span class="pill">P</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Slide 1: Title -->
+    <section class="slide active" data-title="Title">
+      <div>
+        <div class="kicker">OpenClaw Infrastructure Setup</div>
+        <h2>How We Built an AI-Powered Workflow Engine on EC2</h2>
+        <p>
+          A deep dive into our production setup: <strong>AWS EC2</strong> as the compute layer,
+          <strong>Kimi K2.5</strong> as our LLM, and <strong>Linear</strong> as the project management hub.
+        </p>
+        <div class="quote">
+          "We didn't just want an AI assistant — we wanted a system that could take actions, run on schedule,
+          and integrate with our existing tools."
+        </div>
+        <div class="tag"><span class="dot"></span> Production-ready • Self-hosted • API-driven</div>
+      </div>
+      <div class="right">
+        <svg class="figure" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg">
+          <rect x="30" y="36" width="660" height="388" rx="22" fill="#0b0f17" stroke="rgba(255,255,255,.12)"/>
+          
+          <!-- EC2 Instance -->
+          <rect x="60" y="70" width="180" height="120" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="80" y="100" fill="#a9b4c7" font-family="ui-monospace" font-size="12">EC2 Instance</text>
+          <text x="80" y="130" fill="#e9eef7" font-family="ui-monospace" font-size="14">t3.medium</text>
+          <text x="80" y="155" fill="#6e7a92" font-family="ui-monospace" font-size="11">Ubuntu 22.04</text>
+          <text x="80" y="175" fill="#6e7a92" font-family="ui-monospace" font-size="11">Node.js 22</text>
+          
+          <!-- OpenClaw -->
+          <rect x="270" y="70" width="180" height="120" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="290" y="100" fill="#a9b4c7" font-family="ui-monospace" font-size="12">OpenClaw</text>
+          <text x="290" y="130" fill="#e9eef7" font-family="ui-monospace" font-size="14">Gateway</text>
+          <text x="290" y="155" fill="#6e7a92" font-family="ui-monospace" font-size="11">Cron Scheduler</text>
+          <text x="290" y="175" fill="#6e7a92" font-family="ui-monospace" font-size="11">Tool Router</text>
+          
+          <!-- Kimi -->
+          <rect x="480" y="70" width="180" height="120" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="500" y="100" fill="#a9b4c7" font-family="ui-monospace" font-size="12">Kimi API</text>
+          <text x="500" y="130" fill="#e9eef7" font-family="ui-monospace" font-size="14">K2.5</text>
+          <text x="500" y="155" fill="#6e7a92" font-family="ui-monospace" font-size="11">200K context</text>
+          <text x="500" y="175" fill="#6e7a92" font-family="ui-monospace" font-size="11">Coding-optimized</text>
+          
+          <!-- Arrows -->
+          <path d="M240 130h30" stroke="#76a9ff" stroke-width="2" stroke-linecap="round"/>
+          <path d="M450 130h30" stroke="#76a9ff" stroke-width="2" stroke-linecap="round"/>
+          
+          <!-- Integrations -->
+          <rect x="60" y="220" width="290" height="180" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="80" y="250" fill="#a9b4c7" font-family="ui-monospace" font-size="12">Integrations</text>
+          <rect x="80" y="270" width="100" height="30" rx="8" fill="rgba(118,169,255,.1)" stroke="#76a9ff"/>
+          <text x="95" y="290" fill="#76a9ff" font-family="ui-monospace" font-size="11">Linear</text>
+          <rect x="200" y="270" width="120" height="30" rx="8" fill="rgba(120,240,198,.1)" stroke="#78f0c6"/>
+          <text x="210" y="290" fill="#78f0c6" font-family="ui-monospace" font-size="11">Telegram</text>
+          <rect x="80" y="315" width="100" height="30" rx="8" fill="rgba(255,204,102,.1)" stroke="#ffcc66"/>
+          <text x="90" y="335" fill="#ffcc66" font-family="ui-monospace" font-size="11">Notion</text>
+          <rect x="200" y="315" width="120" height="30" rx="8" fill="rgba(255,107,122,.1)" stroke="#ff6b7a"/>
+          <text x="215" y="335" fill="#ff6b7a" font-family="ui-monospace" font-size="11">GitHub</text>
+          
+          <!-- Workflows -->
+          <rect x="370" y="220" width="290" height="180" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="390" y="250" fill="#a9b4c7" font-family="ui-monospace" font-size="12">Active Workflows</text>
+          <rect x="390" y="270" width="250" height="25" rx="6" fill="rgba(255,255,255,.03)"/>
+          <text x="400" y="287" fill="#e9eef7" font-family="ui-monospace" font-size="11">Daily Learning (6pm)</text>
+          <rect x="390" y="305" width="250" height="25" rx="6" fill="rgba(255,255,255,.03)"/>
+          <text x="400" y="322" fill="#e9eef7" font-family="ui-monospace" font-size="11">SWE Learning (8am)</text>
+          <rect x="390" y="340" width="250" height="25" rx="6" fill="rgba(255,255,255,.03)"/>
+          <text x="400" y="357" fill="#e9eef7" font-family="ui-monospace" font-size="11">Linear Issue Sync</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Slide 2: Why This Setup -->
+    <section class="slide" data-title="Why This Setup">
+      <div>
+        <div class="kicker">Architecture Decisions</div>
+        <h2>Why EC2 + Kimi + Linear?</h2>
+        
+        <div class="grid2">
+          <div class="card">
+            <div class="title">AWS EC2</div>
+            <div class="value">Full control over the environment. Persistent compute for cron jobs. Cost-effective for 24/7 operation vs. serverless for long-running agents.</div>
+          </div>
+          <div class="card">
+            <div class="title">Kimi K2.5</div>
+            <div class="value">Excellent coding performance. 200K context window. Cost-effective API pricing. Fast inference for interactive workflows.</div>
+          </div>
+        </div>
+        
+        <div class="callout" style="margin-top: 14px;">
+          <strong>Why not just use ChatGPT/Claude web?</strong>
+          <p>We needed: scheduled execution, file system access, API integrations, and workflows that persist beyond a chat session. OpenClaw gives us "AI with hands and a calendar."</p>
+        </div>
+      </div>
+      <div class="right">
+        <svg class="figure" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg">
+          <rect x="36" y="54" width="648" height="352" rx="22" fill="#0b0f17" stroke="rgba(255,255,255,.12)"/>
+          
+          <text x="70" y="96" fill="#e9eef7" font-family="ui-monospace" font-size="14">The Problem with Chat-Only AI</text>
+          
+          <rect x="70" y="118" width="280" height="64" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="90" y="145" fill="#a9b4c7" font-family="ui-monospace" font-size="13">Chat Interface</text>
+          <text x="90" y="165" fill="#6e7a92" font-family="ui-monospace" font-size="12">Generate text → You do the work</text>
+          
+          <rect x="70" y="200" width="280" height="64" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="90" y="227" fill="#a9b4c7" font-family="ui-monospace" font-size="13">No Scheduling</text>
+          <text x="90" y="247" fill="#6e7a92" font-family="ui-monospace" font-size="12">Can't run daily/weekly tasks</text>
+          
+          <rect x="70" y="282" width="280" height="64" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="90" y="309" fill="#a9b4c7" font-family="ui-monospace" font-size="13">No Integrations</text>
+          <text x="90" y="329" fill="#6e7a92" font-family="ui-monospace" font-size="12">Can't write to Notion/Linear/GitHub</text>
+          
+          <rect x="370" y="118" width="280" height="228" rx="16" fill="#0f1623" stroke="#76a9ff"/>
+          <text x="390" y="145" fill="#76a9ff" font-family="ui-monospace" font-size="13">OpenClaw on EC2</text>
+          <text x="390" y="175" fill="#e9eef7" font-family="ui-monospace" font-size="12">✓ Scheduled cron jobs</text>
+          <text x="390" y="200" fill="#e9eef7" font-family="ui-monospace" font-size="12">✓ API integrations</text>
+          <text x="390" y="225" fill="#e9eef7" font-family="ui-monospace" font-size="12">✓ File system access</text>
+          <text x="390" y="250" fill="#e9eef7" font-family="ui-monospace" font-size="12">✓ Persistent memory</text>
+          <text x="390" y="275" fill="#e9eef7" font-family="ui-monospace" font-size="12">✓ Long-running workflows</text>
+          <text x="390" y="300" fill="#e9eef7" font-family="ui-monospace" font-size="12">✓ Cost-controlled</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Slide 3: EC2 Setup -->
+    <section class="slide" data-title="EC2 Setup">
+      <div>
+        <div class="kicker">Infrastructure</div>
+        <h2>EC2 Instance Configuration</h2>
+        
+        <h3>Instance Specs</h3>
+        <ul>
+          <li><strong>Type:</strong> t3.medium (2 vCPU, 4 GB RAM)</li>
+          <li><strong>OS:</strong> Ubuntu 22.04 LTS</li>
+          <li><strong>Storage:</strong> 20 GB gp3 SSD</li>
+          <li><strong>Region:</strong> ap-southeast-1 (Singapore)</li>
+        </ul>
+        
+        <h3>Software Stack</h3>
+        <ul>
+          <li>Node.js 22.x (LTS)</li>
+          <li>OpenClaw (latest stable)</li>
+          <li>PM2 (process manager for auto-restart)</li>
+          <li>nginx (reverse proxy, optional)</li>
+        </ul>
+        
+        <div class="callout">
+          <strong>Security:</strong> Security group allows SSH (22) from your IP only. No public ports needed for OpenClaw — it connects outbound to Telegram/Linear APIs.
+        </div>
+      </div>
+      <div class="right">
+        <div class="code-block">
+<span class="code-comment"># 1. Launch EC2 instance</span>
+<span class="code-keyword">aws ec2</span> run-instances \
+  --image-id ami-0c8d3c6b \
+  --instance-type t3.medium \
+  --key-name my-key \
+  --security-group-ids sg-xxxxx \
+  --subnet-id subnet-xxxxx
+
+<span class="code-comment"># 2. Install Node.js 22</span>
+<span class="code-keyword">curl -fsSL</span> https://deb.nodesource.com/setup_22.x | sudo -E bash -
+<span class="code-keyword">sudo apt-get install</span> -y nodejs
+
+<span class="code-comment"># 3. Install OpenClaw</span>
+<span class="code-keyword">npm install</span> -g openclaw
+
+<span class="code-comment"># 4. Configure</span>
+<span class="code-keyword">openclaw config</span> init
+<span class="code-comment"># Edit ~/.config/openclaw/config.json</span>
+
+<span class="code-comment"># 5. Run with PM2</span>
+<span class="code-keyword">pm2 start</span> "openclaw gateway" --name openclaw
+<span class="code-keyword">pm2 save</span>
+<span class="code-keyword">pm2 startup</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 4: Kimi Configuration -->
+    <section class="slide" data-title="Kimi Config">
+      <div>
+        <div class="kicker">Model Configuration</div>
+        <h2>Setting Up Kimi K2.5</h2>
+        
+        <h3>Why Kimi K2.5?</h3>
+        <ul>
+          <li><strong>Coding-optimized:</strong> Strong performance on code generation and review</li>
+          <li><strong>200K context:</strong> Can handle large codebases and long conversations</li>
+          <li><strong>Cost-effective:</strong> Competitive pricing for API usage</li>
+          <li><strong>Fast:</strong> Low latency for interactive workflows</li>
+        </ul>
+        
+        <h3>Configuration in OpenClaw</h3>
+        <p>Add to your OpenClaw config:</p>
+        
+        <div class="code-block">
+{
+  "models": {
+    "default": "kimi-coding/k2p5",
+    "providers": {
+      "kimi-coding": {
+        "apiKey": "${KIMI_API_KEY}",
+        "baseUrl": "https://api.moonshot.cn/v1"
+      }
+    }
+  }
+}
+        </div>
+        
+        <div class="callout">
+          <strong>Pro tip:</strong> Store API keys in environment variables, never in config files. Use AWS Systems Manager Parameter Store or Secrets Manager for production.
+        </div>
+      </div>
+      <div class="right">
+        <svg class="figure" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg">
+          <rect x="36" y="54" width="648" height="352" rx="22" fill="#0b0f17" stroke="rgba(255,255,255,.12)"/>
+          
+          <text x="70" y="96" fill="#e9eef7" font-family="ui-monospace" font-size="14">Kimi K2.5 Performance</text>
+          
+          <rect x="70" y="118" width="580" height="40" rx="8" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <rect x="70" y="118" width="480" height="40" rx="8" fill="#76a9ff" opacity="0.3"/>
+          <text x="80" y="143" fill="#e9eef7" font-family="ui-monospace" font-size="13">Context Window: 200K tokens</text>
+          
+          <rect x="70" y="170" width="580" height="40" rx="8" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <rect x="70" y="170" width="520" height="40" rx="8" fill="#78f0c6" opacity="0.3"/>
+          <text x="80" y="195" fill="#e9eef7" font-family="ui-monospace" font-size="13">Coding Performance: Excellent</text>
+          
+          <rect x="70" y="222" width="580" height="40" rx="8" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <rect x="70" y="222" width="450" height="40" rx="8" fill="#ffcc66" opacity="0.3"/>
+          <text x="80" y="247" fill="#e9eef7" font-family="ui-monospace" font-size="13">Latency: Low (good for interactive)</text>
+          
+          <rect x="70" y="274" width="580" height="40" rx="8" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <rect x="70" y="274" width="500" height="40" rx="8" fill="#ff6b7a" opacity="0.3"/>
+          <text x="80" y="299" fill="#e9eef7" font-family="ui-monospace" font-size="13">Cost: Competitive</text>
+          
+          <text x="70" y="350" fill="#a9b4c7" font-family="ui-monospace" font-size="12">Best for: Code review, architecture decisions, learning content</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Slide 5: Linear Integration -->
+    <section class="slide" data-title="Linear Setup">
+      <div>
+        <div class="kicker">Project Management</div>
+        <h2>Linear Integration Setup</h2>
+        
+        <h3>What We Built</h3>
+        <p>A two-way sync between OpenClaw and Linear that allows:</p>
+        <ul>
+          <li>Creating issues from Telegram conversations</li>
+          <li>Getting issue updates via cron jobs</li>
+          <li>Auto-generating standup reports from Linear activity</li>
+          <li>Linking discussions to Linear issues for context</li>
+        </ul>
+        
+        <h3>API Configuration</h3>
+        <div class="code-block">
+<span class="code-comment"># Linear API Token (stored in env)</span>
+<span class="code-keyword">export</span> LINEAR_API_KEY=<span class="code-string">"lin_api_xxxxx"</span>
+
+<span class="code-comment"># In TOOLS.md (workspace config)</span>
+<span class="code-keyword">### Linear</span>
+- API Key: <span class="code-string">$LINEAR_API_KEY</span>
+- Team: Engineering
+- Default Project: Platform
+        </div>
+        
+        <div class="callout">
+          <strong>Key workflow:</strong> Mention an issue ID (e.g., "TEAM-123") in Telegram → OpenClaw fetches the issue details → Can update status, add comments, or create sub-issues.
+        </div>
+      </div>
+      <div class="right">
+        <svg class="figure" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg">
+          <rect x="36" y="54" width="648" height="352" rx="22" fill="#0b0f17" stroke="rgba(255,255,255,.12)"/>
+          
+          <text x="70" y="96" fill="#e9eef7" font-family="ui-monospace" font-size="14">Linear ↔ OpenClaw Flow</text>
+          
+          <!-- Telegram -->
+          <rect x="70" y="130" width="140" height="80" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="90" y="165" fill="#a9b4c7" font-family="ui-monospace" font-size="12">Telegram</text>
+          <text x="90" y="190" fill="#6e7a92" font-family="ui-monospace" font-size="10">User mentions issue</text>
+          
+          <!-- Arrow -->
+          <path d="M210 170h60" stroke="#76a9ff" stroke-width="2" stroke-linecap="round"/>
+          
+          <!-- OpenClaw -->
+          <rect x="270" y="130" width="140" height="80" rx="16" fill="#0f1623" stroke="#76a9ff"/>
+          <text x="290" y="165" fill="#76a9ff" font-family="ui-monospace" font-size="12">OpenClaw</text>
+          <text x="290" y="190" fill="#6e7a92" font-family="ui-monospace" font-size="10">Parse & fetch</text>
+          
+          <!-- Arrow -->
+          <path d="M410 170h60" stroke="#76a9ff" stroke-width="2" stroke-linecap="round"/>
+          
+          <!-- Linear -->
+          <rect x="470" y="130" width="140" height="80" rx="16" fill="#0f1623" stroke="#78f0c6"/>
+          <text x="490" y="165" fill="#78f0c6" font-family="ui-monospace" font-size="12">Linear API</text>
+          <text x="490" y="190" fill="#6e7a92" font-family="ui-monospace" font-size="10">Get/update issue</text>
+          
+          <!-- Reverse flow -->
+          <rect x="270" y="250" width="380" height="120" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="290" y="285" fill="#a9b4c7" font-family="ui-monospace" font-size="12">Cron Workflow: Daily Standup Report</text>
+          <text x="290" y="315" fill="#e9eef7" font-family="ui-monospace" font-size="11">1. Fetch issues updated in last 24h</text>
+          <text x="290" y="340" fill="#e9eef7" font-family="ui-monospace" font-size="11">2. Generate summary with Kimi</text>
+          <text x="290" y="365" fill="#e9eef7" font-family="ui-monospace" font-size="11">3. Post to Telegram at 9 AM</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Slide 6: Linear Code Example -->
+    <section class="slide" data-title="Linear Code">
+      <div class="onecol">
+        <div class="kicker">Implementation</div>
+        <h2>Linear Integration Code</h2>
+        
+        <p>Here's how we query Linear issues and create summaries:</p>
+        
+        <div class="code-block">
+<span class="code-comment"># ~/.config/openclaw/linear.sh - Linear API helper</span>
+
+<span class="code-keyword">LINEAR_API_KEY</span>=<span class="code-string">"${LINEAR_API_KEY}"</span>
+<span class="code-keyword">LINEAR_TEAM</span>=<span class="code-string">"ENG"</span>
+
+<span class="code-comment"># Fetch recent issues</span>
+<span class="code-keyword">fetch_linear_issues</span>() {
+  curl -s -X POST \
+    -H <span class="code-string">"Authorization: $LINEAR_API_KEY"</span> \
+    -H <span class="code-string">"Content-Type: application/json"</span> \
+    https://api.linear.app/graphql \
+    -d <span class="code-string">'{"query": "query { issues(filter: { team: { name: { eq: \"'
+    $LINEAR_TEAM<span class="code-string">'\" } } }, first: 20) { nodes { id title state { name } assignee { name } updatedAt } } }"}'</span>
+}
+
+<span class="code-comment"># Create daily summary</span>
+<span class="code-keyword">generate_standup</span>() {
+  local issues=$(fetch_linear_issues)
+  <span class="code-comment"># Parse with jq, format for Kimi</span>
+  echo <span class="code-string">"$issues"</span> | jq -r <span class="code-string">'.data.issues.nodes[] | "- \(.title) [\(.state.name)]"'</span>
+}
+        </div>
+        
+        <div class="callout">
+          <strong>GraphQL queries we use:</strong>
+          <ul style="margin-top: 8px;">
+            <li><code>issues()</code> — List issues with filters (team, state, assignee)</li>
+            <li><code>issue()</code> — Get single issue details by ID</li>
+            <li><code>issueCreate()</code> — Create new issue from Telegram</li>
+            <li><code>issueUpdate()</code> — Update status, assignee, or labels</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 7: Active Workflows -->
+    <section class="slide" data-title="Workflows">
+      <div>
+        <div class="kicker">What We Run</div>
+        <h2>Our Active Workflows</h2>
+        
+        <h3>1. Daily Learning System (6 PM)</h3>
+        <ul>
+          <li>Rotates through 8 subjects (Calculus → Spanish → System Design...)</li>
+          <li>Generates lesson + quiz with Kimi</li>
+          <li>Updates Notion schedule database</li>
+          <li>Sends Telegram reminder with lesson</li>
+        </ul>
+        
+        <h3>2. Software Engineering Learning (8 AM)</h3>
+        <ul>
+          <li>Daily SWE topics (testing, architecture, patterns)</li>
+          <li>Generated by cron, delivered via Telegram</li>
+          <li>Examples: CDCT, Feature Flags, Load Balancing</li>
+        </ul>
+        
+        <h3>3. Linear Standup Reporter (9 AM)</h3>
+        <ul>
+          <li>Fetches issues updated in last 24h</li>
+          <li>Kimi summarizes activity per team member</li>
+          <li>Posts formatted report to Telegram group</li>
+        </ul>
+      </div>
+      <div class="right">
+        <svg class="figure" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg">
+          <rect x="36" y="54" width="648" height="352" rx="22" fill="#0b0f17" stroke="rgba(255,255,255,.12)"/>
+          
+          <text x="70" y="96" fill="#e9eef7" font-family="ui-monospace" font-size="14">Cron Schedule</text>
+          
+          <!-- 6 AM -->
+          <rect x="70" y="118" width="580" height="60" rx="12" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="90" y="145" fill="#76a9ff" font-family="ui-monospace" font-size="14">08:00</text>
+          <text x="160" y="145" fill="#e9eef7" font-family="ui-monospace" font-size="13">SWE Learning</text>
+          <text x="160" y="165" fill="#6e7a92" font-family="ui-monospace" font-size="11">Architecture, patterns, best practices</text>
+          
+          <!-- 9 AM -->
+          <rect x="70" y="190" width="580" height="60" rx="12" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="90" y="217" fill="#78f0c6" font-family="ui-monospace" font-size="14">09:00</text>
+          <text x="160" y="217" fill="#e9eef7" font-family="ui-monospace" font-size="13">Linear Standup Report</text>
+          <text x="160" y="237" fill="#6e7a92" font-family="ui-monospace" font-size="11">Team activity summary from Linear</text>
+          
+          <!-- 6 PM -->
+          <rect x="70" y="262" width="580" height="60" rx="12" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="90" y="289" fill="#ffcc66" font-family="ui-monospace" font-size="14">18:00</text>
+          <text x="160" y="289" fill="#e9eef7" font-family="ui-monospace" font-size="13">Daily Learning Session</text>
+          <text x="160" y="309" fill="#6e7a92" font-family="ui-monospace" font-size="11">Personal learning rotation (8 subjects)</text>
+          
+          <!-- Heartbeat -->
+          <rect x="70" y="334" width="580" height="50" rx="12" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="90" y="360" fill="#ff6b7a" font-family="ui-monospace" font-size="14">~30min</text>
+          <text x="160" y="360" fill="#e9eef7" font-family="ui-monospace" font-size="13">Heartbeat Checks</text>
+          <text x="320" y="360" fill="#6e7a92" font-family="ui-monospace" font-size="11">Optional proactive checks</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Slide 8: Example Output -->
+    <section class="slide" data-title="Examples">
+      <div>
+        <div class="kicker">Real Output</div>
+        <h2>What the Workflows Produce</h2>
+        
+        <h3>Learning Session Example</h3>
+        <div class="callout">
+          <strong>🎓 Daily Learning — Tuesday, Feb 24</strong>
+          <p style="font-size: 14px; color: var(--muted);">
+            <strong>Study:</strong> System Design — Load Balancing & Caching<br/>
+            <strong>Quiz:</strong> Spanish — Past tense (5 questions)<br/>
+            <strong>Key takeaway:</strong> "Caching adds complexity. Ask: Is the performance gain worth the stale data risk?"
+          </p>
+        </div>
+        
+        <h3>SWE Learning Example</h3>
+        <div class="callout">
+          <strong>🚀 Feature Flags as a Safety Net</strong>
+          <p style="font-size: 14px; color: var(--muted);">
+            Three patterns: Kill switches, gradual rollouts, targeted segments.<br/>
+            <em>Golden rule:</em> Treat flags like technical debt — set a TTL and remove them.
+          </p>
+        </div>
+        
+        <h3>Linear Standup Example</h3>
+        <div class="callout">
+          <strong>📊 Daily Standup — Feb 24</strong>
+          <p style="font-size: 14px; color: var(--muted);">
+            • Chris: Completed API refactor (TEAM-42), in review<br/>
+            • Alex: Working on auth migration (TEAM-38), blocked on deps<br/>
+            • 3 issues moved to Done, 2 new issues created
+          </p>
+        </div>
+      </div>
+      <div class="right">
+        <svg class="figure" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg">
+          <rect x="36" y="54" width="648" height="352" rx="22" fill="#0b0f17" stroke="rgba(255,255,255,.12)"/>
+          
+          <text x="70" y="96" fill="#e9eef7" font-family="ui-monospace" font-size="14">Output Channels</text>
+          
+          <!-- Telegram -->
+          <rect x="70" y="118" width="280" height="80" rx="16" fill="#0f1623" stroke="#76a9ff"/>
+          <text x="90" y="145" fill="#76a9ff" font-family="ui-monospace" font-size="13">Telegram</text>
+          <text x="90" y="170" fill="#e9eef7" font-family="ui-monospace" font-size="12">Primary delivery channel</text>
+          <text x="90" y="188" fill="#6e7a92" font-family="ui-monospace" font-size="11">Instant, mobile-friendly</text>
+          
+          <!-- Notion -->
+          <rect x="370" y="118" width="280" height="80" rx="16" fill="#0f1623" stroke="#78f0c6"/>
+          <text x="390" y="145" fill="#78f0c6" font-family="ui-monospace" font-size="13">Notion</text>
+          <text x="390" y="170" fill="#e9eef7" font-family="ui-monospace" font-size="12">Knowledge base</text>
+          <text x="390" y="188" fill="#6e7a92" font-family="ui-monospace" font-size="11">Persistent, searchable</text>
+          
+          <!-- Linear -->
+          <rect x="70" y="220" width="280" height="80" rx="16" fill="#0f1623" stroke="#ffcc66"/>
+          <text x="90" y="247" fill="#ffcc66" font-family="ui-monospace" font-size="13">Linear</text>
+          <text x="90" y="272" fill="#e9eef7" font-family="ui-monospace" font-size="12">Project tracking</text>
+          <text x="90" y="290" fill="#6e7a92" font-family="ui-monospace" font-size="11">Bi-directional sync</text>
+          
+          <!-- Files -->
+          <rect x="370" y="220" width="280" height="80" rx="16" fill="#0f1623" stroke="#ff6b7a"/>
+          <text x="390" y="247" fill="#ff6b7a" font-family="ui-monospace" font-size="13">Local Files</text>
+          <text x="390" y="272" fill="#e9eef7" font-family="ui-monospace" font-size="12">HTML presentations</text>
+          <text x="390" y="290" fill="#6e7a92" font-family="ui-monospace" font-size="11">Generated reports, diagrams</text>
+          
+          <!-- Stats -->
+          <rect x="70" y="322" width="580" height="70" rx="16" fill="#0f1623" stroke="rgba(255,255,255,.12)"/>
+          <text x="90" y="352" fill="#a9b4c7" font-family="ui-monospace" font-size="13">Monthly Stats (Example)</text>
+          <text x="90" y="375" fill="#e9eef7" font-family="ui-monospace" font-size="12">~90 learning sessions • ~30 standup reports • ~50 Linear interactions</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Slide 9: Getting Started -->
+    <section class="slide" data-title="Getting Started">
+      <div class="onecol">
+        <div class="kicker">Replication Guide</div>
+        <h2>How to Set This Up Yourself</h2>
+        
+        <div class="grid2">
+          <div class="card">
+            <div class="title">Step 1: Infrastructure</div>
+            <div class="value">Launch EC2 t3.medium, install Node.js 22, configure security group</div>
+          </div>
+          <div class="card">
+            <div class="title">Step 2: OpenClaw</div>
+            <div class="value">Install OpenClaw, configure Kimi API key, set up Telegram bot</div>
+          </div>
+          <div class="card">
+            <div class="title">Step 3: Linear</div>
+            <div class="value">Create Linear API key, test GraphQL queries, build integration scripts</div>
+          </div>
+          <div class="card">
+            <div class="title">Step 4: Workflows</div>
+            <div class="value">Write cron jobs, test manually, then schedule. Monitor with PM2 logs</div>
+          </div>
+        </div>
+        
+        <div class="callout" style="margin-top: 20px;">
+          <strong>Cost estimate (monthly):</strong>
+          <ul style="margin-top: 8px;">
+            <li>EC2 t3.medium: ~$30 (on-demand) or ~$18 (reserved)</li>
+            <li>Kimi API: ~$5-20 (depends on usage)</li>
+            <li>Linear: Free tier sufficient for small teams</li>
+            <li>Telegram: Free</li>
+          </ul>
+          <p><strong>Total: ~$25-50/month</strong> for a fully automated AI workflow engine</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 10: Q&A -->
+    <section class="slide" data-title="Q&A">
+      <div class="onecol" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+        <div class="kicker">Questions?</div>
+        <h2 style="font-size: 48px; margin-bottom: 20px;">Let's Talk Implementation</h2>
+        
+        <p style="max-width: 600px; font-size: 20px;">
+          We've covered EC2 setup, Kimi configuration, Linear integration, and real workflow examples.
+        </p>
+        
+        <div class="grid2" style="max-width: 700px; margin-top: 30px;">
+          <div class="callout">
+            <strong>Resources</strong>
+            <p style="font-size: 14px;">github.com/openclaw/openclaw<br/>moonshot.cn (Kimi API)<br/>linear.app/developers</p>
+          </div>
+          <div class="callout">
+            <strong>Contact</strong>
+            <p style="font-size: 14px;">Questions about this setup?<br/>Reach out on Telegram or check the workspace docs.</p>
+          </div>
+        </div>
+        
+        <div class="hint" style="margin-top: 30px;">Press <span class="kbd">P</span> to print this presentation</div>
+      </div>
+    </section>
+  </main>
+
+  <div class="footer">
+    <span class="hint">Navigate: <span class="kbd">←</span>/<span class="kbd">→</span> · Fullscreen: <span class="kbd">F</span> · Print: <span class="kbd">P</span></span>
+    <div class="progress">
+      <span id="counter">1 / 10</span>
+      <span class="bar" aria-hidden="true"><i id="bar"></i></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let idx = 0;
+
+  const counter = document.getElementById('counter');
+  const bar = document.getElementById('bar');
+
+  function setActive(i){
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, k) => s.classList.toggle('active', k === idx));
+    counter.textContent = `${idx + 1} / ${slides.length}`;
+    bar.style.width = `${((idx + 1) / slides.length) * 100}%`;
+    document.title = `OpenClaw Workflow Setup — ${slides[idx].dataset.title || (idx+1)}`;
+  }
+
+  function next(){ setActive(idx + 1); }
+  function prev(){ setActive(idx - 1); }
+
+  function toggleFullscreen(){
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+    else document.exitFullscreen?.();
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft'  || e.key === 'PageUp') { e.preventDefault(); prev(); }
+    if (e.key.toLowerCase() === 'f') { e.preventDefault(); toggleFullscreen(); }
+    if (e.key.toLowerCase() === 'p') { e.preventDefault(); window.print(); }
+    if (e.key === 'Home') { e.preventDefault(); setActive(0); }
+    if (e.key === 'End') { e.preventDefault(); setActive(slides.length - 1); }
+  });
+
+  window.addEventListener('click', (e) => {
+    const tag = (e.target?.tagName || '').toLowerCase();
+    if (['a','button','input','textarea','select'].includes(tag)) return;
+    const inMain = !!e.target.closest('main');
+    if (inMain) next();
+  });
+
+  let x0 = null;
+  window.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, {passive:true});
+  window.addEventListener('touchend', (e) => {
+    if (x0 === null) return;
+    const x1 = e.changedTouches[0].clientX;
+    const dx = x1 - x0;
+    if (Math.abs(dx) > 50){ dx < 0 ? next() : prev(); }
+    x0 = null;
+  }, {passive:true});
+
+  setActive(0);
+</script>
+</body>
+</html>

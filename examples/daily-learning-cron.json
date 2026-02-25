@@ -1,0 +1,17 @@
+{
+  "name": "Daily Learning Session",
+  "description": "8-subject learning rotation with Notion tracking",
+  "schedule": {
+    "kind": "cron",
+    "expr": "0 18 * * *",
+    "tz": "Asia/Manila"
+  },
+  "payload": {
+    "kind": "agentTurn",
+    "message": "Run daily learning session: check Learning Hub, determine today's topic from rotation (Calculus → Spanish → System Design → History → Science → Finance → Business → Problem Solving), generate lesson + quiz, update Notion schedule"
+  },
+  "sessionTarget": "isolated",
+  "delivery": {
+    "mode": "announce"
+  }
+}
